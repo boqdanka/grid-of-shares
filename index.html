@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grid of shares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@300;400;700&family=Special+Gothic+Condensed+One&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="panel" aria-label="Controls">
+    <h1>Grid of shares</h1>
+
+    <div class="row wrap topbar">
+      <select id="tpl" aria-label="Template">
+        <option value="autumn">Autumn Statistics (Brik poster)</option>
+        <option value="summer">Summer numbers (default)</option>
+      </select>
+      <button id="tplLoad" class="primary">Load template</button>
+      <button id="undo" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)" disabled>Undo</button>
+      <button id="redo" aria-label="Redo" title="Redo (Shift+Ctrl/Cmd+Z)" disabled>Redo</button>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tabData" aria-controls="paneData" aria-selected="true">Data</button>
+      <button role="tab" id="tabDesign" aria-controls="paneDesign" aria-selected="false">Design</button>
+    </div>
+
+    <section id="paneData" role="tabpanel" aria-labelledby="tabData">
+      <h2>What the numbers mean</h2>
+      <div class="global">
+        <div>
+          <label for="mode">Numbers show</label>
+          <select id="mode">
+            <option value="values">My data</option>
+            <option value="percent">Share of the grid, %</option>
+          </select>
+        </div>
+        <div>
+          <label for="decSep">Decimal separator</label>
+          <select id="decSep">
+            <option value="auto">Detect (2,6 or 2.6)</option>
+            <option value=",">Comma: 2,6</option>
+            <option value=".">Point: 2.6</option>
+          </select>
+        </div>
+        <div class="full">
+          <label for="sizeSrc">Sector size comes from</label>
+          <select id="sizeSrc">
+            <option value="manual">The shares I set</option>
+            <option value="abs">The data, proportionally</option>
+            <option value="rel">The data's change vs the first column</option>
+          </select>
+          <p class="hint" id="sizeHint"></p>
+        </div>
+      </div>
+
+      <h2>Data table</h2>
+      <div class="tablewrap"><table id="dtable"></table></div>
+      <div class="row wrap" style="margin-top:8px">
+        <button id="add">+ Sector</button>
+        <button id="addText">+ Text block</button>
+        <button id="framePlus">+ Column</button>
+        <button id="frameMinus">&minus; Last column</button>
+      </div>
+      <p class="hint">Each column is a set of data (for example a year). A sector's share is its part of the whole grid; type a share to resize it.</p>
+
+      <h2>Paste data</h2>
+      <textarea id="paste" rows="4" placeholder="Sector&#9;2023&#9;2024&#10;Umbrellas&#9;1200&#9;1500&#10;Wet shoes&#9;36,5&#9;41"></textarea>
+      <div class="row" style="margin-top:6px"><button id="pasteApply" class="primary">Apply data</button></div>
+      <p class="hint">One sector per line: its name, then one value per column, separated by tabs (as copied from a spreadsheet), semicolons or commas. A first line of column names is recognised. This replaces the current sectors; text blocks are kept.</p>
+
+      <h2>Playback</h2>
+      <div class="row wrap">
+        <button id="playPrev" aria-label="Previous column">&#9664;</button>
+        <button id="play" class="primary" aria-pressed="false">Play</button>
+        <button id="playNext" aria-label="Next column">&#9654;</button>
+      </div>
+      <input type="range" id="frame" min="1" max="1" step="1" value="1" aria-label="Column" style="margin-top:8px">
+      <p class="hint" id="frameName" style="margin-top:2px"></p>
+      <div class="global">
+        <div>
+          <label for="playSec">Seconds per column: <span id="playSecV"></span></label>
+          <input type="range" id="playSec" min="0.8" max="6" step="0.2">
+        </div>
+        <div>
+          <label for="playLoop">When it reaches the end</label>
+          <select id="playLoop">
+            <option value="loop">Start again</option>
+            <option value="pingpong">Go back and forth</option>
+            <option value="once">Stop</option>
+          </select>
+        </div>
+      </div>
+
+      <h2>Preview animation</h2>
+      <button id="live" aria-pressed="false">Demo drift</button>
+      <p class="hint">Makes up random changes so you can preview how sectors move. Your data is not changed, and stopping restores it.</p>
+      <label for="demoSec">Seconds between changes: <span id="demoSecV"></span></label>
+      <input type="range" id="demoSec" min="0.8" max="6" step="0.2">
+
+      <h2>Small values</h2>
+      <div class="global">
+        <div class="full">
+          <label for="minShare">Smallest allowed sector: <span id="minShareV"></span></label>
+          <input type="range" id="minShare" min="0" max="6" step="0.5">
+          <p class="hint">Raises tiny sectors so they stay readable. Sizes are then no longer exactly proportional.</p>
+        </div>
+        <div>
+          <label for="groupThr">Group sectors below</label>
+          <select id="groupThr"><option value="1">1%</option><option value="2" selected>2%</option><option value="3">3%</option><option value="5">5%</option></select>
+        </div>
+        <div style="align-self:end"><button id="groupSmall">Group into &ldquo;Other&rdquo;</button></div>
+      </div>
+      <p class="hint" id="smallInfo"></p>
+    </section>
+
+    <section id="paneDesign" role="tabpanel" aria-labelledby="tabDesign" hidden>
+      <h2>Colors</h2>
+      <div class="schemes" id="schemes" style="margin-bottom:12px"></div>
+      <div class="global">
+        <div>
+          <label for="fillMode">Fill style</label>
+          <select id="fillMode">
+            <option value="solid">Solid</option>
+            <option value="gradient">Soft gradients</option>
+            <option value="mixed">Mixed: solid, gradient, stripes</option>
+          </select>
+        </div>
+        <div>
+          <label for="grain">Grain: <span id="grainV"></span>%</label>
+          <input type="range" id="grain" min="0" max="100" step="1">
+        </div>
+        <div class="full"><button id="recolor">Shuffle colors</button></div>
+      </div>
+
+      <h2>Canvas</h2>
+      <div class="global">
+        <div>
+          <label for="aspect">Format</label>
+          <select id="aspect">
+            <option value="1.5">Landscape 3:2</option>
+            <option value="0.8">Portrait 4:5</option>
+            <option value="0.707">Portrait, A-series</option>
+            <option value="1">Square</option>
+            <option value="1.778">Wide 16:9</option>
+          </select>
+        </div>
+        <div>
+          <label for="gap">Gap: <span id="gapV"></span>px</label>
+          <input type="range" id="gap" min="0" max="24" step="1">
+        </div>
+        <div class="full">
+          <label for="radius">Corner radius: <span id="radiusV"></span>px</label>
+          <input type="range" id="radius" min="0" max="40" step="1">
+        </div>
+        <div class="full"><button id="relayout" title="Rebuilds the arrangement of sectors for the current sizes">Optimize layout</button></div>
+      </div>
+
+      <h2>Text</h2>
+      <div class="global">
+        <div>
+          <label for="typo">Typography</label>
+          <select id="typo">
+            <option value="classic">Classic</option>
+            <option value="poster">Poster (Brik)</option>
+          </select>
+        </div>
+        <div>
+          <label for="numFit">Number size</label>
+          <select id="numFit">
+            <option value="fixed">Fixed</option>
+            <option value="fill">Fill sector</option>
+          </select>
+        </div>
+        <div>
+          <label for="textFit">If text doesn't fit</label>
+          <select id="textFit">
+            <option value="clip">Clip it</option>
+            <option value="hide">Fade it out</option>
+          </select>
+        </div>
+        <div>
+          <label for="typeMode">Typewriter</label>
+          <select id="typeMode">
+            <option value="first">First appearance only</option>
+            <option value="always">Also when rotating</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+        <div class="full"><label class="chk"><input type="checkbox" id="textScale"> Scale text with the sector</label></div>
+        <div class="full"><label class="chk"><input type="checkbox" id="trimLines"> Trim captions by whole lines</label></div>
+      </div>
+
+      <h2>Motion</h2>
+      <div class="global">
+        <div>
+          <label for="anim">Intro animation</label>
+          <select id="anim">
+            <option value="pop">Pop in</option>
+            <option value="slide">Slide up</option>
+            <option value="wipe">Wipe</option>
+            <option value="fade">Fade</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div style="align-self:end"><button id="replay" class="primary">Replay intro</button></div>
+        <div class="full">
+          <label for="speed">Overall speed: <span id="speedV"></span></label>
+          <input type="range" id="speed" min="0.2" max="4" step="0.1">
+          <div class="row" style="margin-top:6px">
+            <button class="spPreset" data-v="0.5">Slow</button>
+            <button class="spPreset" data-v="1">Normal</button>
+            <button class="spPreset" data-v="2">Fast</button>
+          </div>
+        </div>
+        <div>
+          <label for="spSize">Sectors resizing: <span id="spSizeV"></span></label>
+          <input type="range" id="spSize" min="0.25" max="3" step="0.05">
+        </div>
+        <div>
+          <label for="spCount">Numbers counting: <span id="spCountV"></span></label>
+          <input type="range" id="spCount" min="0.25" max="3" step="0.05">
+        </div>
+        <div>
+          <label for="spIntro">Intro: <span id="spIntroV"></span></label>
+          <input type="range" id="spIntro" min="0.25" max="3" step="0.05">
+        </div>
+        <div>
+          <label for="spHover">Hover growth: <span id="spHoverV"></span></label>
+          <input type="range" id="spHover" min="0.25" max="3" step="0.05">
+        </div>
+        <div class="full"><button id="hoverToggle" aria-pressed="false">Hover growth: off</button></div>
+        <div class="full">
+          <label for="boost">Growth strength: <span id="boostV"></span>%</label>
+          <input type="range" id="boost" min="20" max="300" step="10">
+        </div>
+      </div>
+
+      <h2>Sectors</h2>
+      <div id="list"></div>
+    </section>
+  </aside>
+
+  <main class="stagewrap">
+    <div class="titlebar"><input type="text" id="title" aria-label="Title" placeholder="Title"></div>
+    <div class="stage" id="stage"></div>
+  </main>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
